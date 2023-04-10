@@ -1,0 +1,179 @@
+Comparing Hazelcast with other caches like Ehcache, Guava, and Caffeine may not be very useful. It is because, unlike other caches, Hazelcast is a distributed cache, that is, it spreads the data across machines/JVM. Although Hazelcast can work very well on single JVM as well, however, it is more useful is a distributed environment.
+
+hazelcast from starting it is used as for distributed cache.
+unlike redis which is in starting serving to 1 machine only.
+
+Simple cluster scale in/out : Maintaining a cluster where nodes are added or removed is very simple in hazelcast,Hazelcast automatically handles partitioning of data .
+
+
+Less resources needs to support failover : 
+In Hazelcast, all nodes are treated equal, failure of a node is detected by other nodes. So, the case of a node going down is handled pretty transparently and that too without any additional set of monitoring servers.
+
+Simple Distributed Compute − Hazelcast, with its EntryProcessor, provides a simple interface to send the code to the data for parallel processing. This reduces data transfer over the wire. Redis also supports this, however, achieving this requires one to be aware of Lua scripting which adds additional learning curve.
+
+Multiple Node Instance setup . 
+
+As Hazelcast is distributed so it relay on multiple server/mc ,so it requires access to the internal/external network.
+And the main use-case of being discovery of hazelcast node within the cluster.
+
+
+This node discovery happens in few ways −
+
+Multicast
+
+TCP/IP
+
+Amazon EC2 auto discovery
+
+1. Multicast way : It is bydeafult on, interacts with all types of machine.
+
+
+Multicast, by default, accepts communication from all the machines in the multicast group. This may be a security concern and that is why typically, on-premise, multicast communication is firewalled. So, while multicast is good for development work, in production, it is best to use TCP/IP based discovery.
+
+
+2. Tcp/ip
+
+Due to the drawbacks stated for Multicast, TCP/IP is the preferred way for communication. In case of TCP/IP, a member can connect to only known/listed members.
+
+
+------------------------------------------------------
+Hazelcast clients are the lightweight clients to Hazelcast members. Hazelcast members are responsible to store data and the partitions 
+
+clients : just for sack of retrivals of data , do not take responsiblity of other things.
+
+server/culster-members : they are responsible for storing the data and managing it .
+
+
+The clients have their own life cycle and do not affect the Hazelcast member instances.
+
+
+# Server
+import java.util.Map;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+public class Server {
+   public static void main(String... args){
+      //initialize hazelcast server/instance
+      HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance();
+      //create a simple map
+      Map<String, String> vehicleOwners = hazelcast.getMap("vehicleOwnerMap");
+      // add key-value to map
+      vehicleOwners.put("John", "Honda-9235");
+      // do not shutdown, let the server run
+      //hazelcast.shutdown();
+   }
+}
+
+#Client
+
+import java.util.Map;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.core.HazelcastInstance;
+public class Client {
+   public static void main(String... args){
+      //initialize hazelcast client
+      HazelcastInstance hzClient = HazelcastClient.newHazelcastClient();
+      //read from map
+      Map<String, String> vehicleOwners = hzClient.getMap("vehicleOwnerMap");
+      System.out.println(vehicleOwners.get("John"));
+      System.out.println("Member of cluster: " +
+      hzClient.getCluster().getMembers());
+      // perform shutdown
+      hzClient.getLifecycleService().shutdown();
+   }
+}
+
+o/p : 
+
+Honda-9235
+Member of cluster: [Member [localhost]:5701 - a47ec375-3105-42cd-96c7-fc5eb382e1b0]
+As seen from the output −
+
+The cluster only contains 1 member which is from Server.java.
+
+The client is able to access the map which is stored inside the server.
+
+----------------------------------
+Load Balancing
+Hazelcast Client supports load balancing using various algorithms. Load balancing ensures that the load is shared across members and no single member of the cluster is overloaded. The default load balancing mechanism is set to round-robin. The same can be changed by using the loadBalancer tag in the config.
+
+We can specify the type of load balancer using the load-balancer tag in the configuration. Here is a sample for choosing a strategy that randomly picks up a node.
+------------------------------------------------------
+
+HazelcastInit Toolfactory : with aws,kuberneties ,multicast, tcp/ip etc things.
+HazelcastCacheManager : getting the cache Manager
+HazelcastNotificationListneer : Publish and listens the message on "notification-messsage"
+HazelcastinvalidateCaheDCI : publish and get the data of topic "cache-invalidate" and then ivalidate it
+HazelcastExecutionService. : execution helps something.
+----------------------
+Starting Hazelcast with hazelcast.xml from classpath
+Resource -> hazelcast.xml
+
+hzConfig = new XmlConfigBuilder(Thread.currentThread().getContextClassLoader().getResourceAsStream("hazelcast.xml")).build()
+            hzConfig.setInstanceName("moqui")
+            
+hazelcast.xml fetch in HazelcastToolFactory as base config file and then after we furter add joins in network using coding 
+and then based on config Hazelcast object is created.            
+
+----------------
+Backpressure is disabled
+
+Previously we are getting no joins are defined error
+In this we did'nt enable any of the method of network joins.
+
+
+02:22:42.950  INFO         main       o.moqui.i.w.MoquiContextListener Moqui Framework initialized in 6.28 seconds
+02:22:42.955  INFO         main  c.hazelcast.w.ClusteredSessionService Retrying the connection!!
+02:22:42.955  INFO         main  c.hazelcast.w.HazelcastInstanceLoader Using existing Hazelcast instance with name [moqui] for session replication
+02:22:42.973  INFO         main  c.hazelcast.w.ClusteredSessionService Successfully Connected!
+
+
+
+
+Retrying the connection!!
+
+This Person has tested this feature find how it tested this things
+
+https://github.com/moqui/moqui-hazelcast/compare/master...lawrencetran:moqui-hazelcast:clustered-test
+
+
+
+Moqui Framework initialized in 5.81 seconds
+03:28:57.806  INFO         main  c.hazelcast.w.ClusteredSessionService Retrying the connection!!
+03:28:57.807  INFO         main  c.hazelcast.w.HazelcastInstanceLoader Using existing Hazelcast instance with name [moqui] for session replication
+03:28:57.825  INFO         main  c.hazelcast.w.ClusteredSessionService Successfully Connected!
+03:28:57.826 ERROR         main    o.moqui.i.w.ElasticRequestLogFilter In ElasticRequestLogFilter init could not find ElasticClient with name logger or default, not starting
+03:28:57.918  INFO         main            o.moqui.i.w.MoquiFopServlet MoquiFopServlet initialized for webapp webroot
+03:28:57.918  INFO         main               o.moqui.i.w.MoquiServlet MoquiServlet initialized for webapp webroot
+03:28:57.918  INFO         main         o.eclipse.j.s.h.ContextHandler Started o.e.j.w.WebAppContext@271f18d3{Moqui Root Webapp,/,file:///home/rohit/work/moqui-framework28feb/moqui-framework/execwartmp/ROOT/webapp/,AVAILABLE}{file:/home/rohit/work/moqui-framework28feb/moqui-framework/moqui.war}
+03:28:57.925  INFO         main        o.eclipse.j.s.AbstractConnector Started ServerConnector@75f65e45{HTTP/1.1, (http/1.1)}{0.0.0.0:8080}
+03:28:57.927  INFO         main                   o.eclipse.j.s.Server Started Server@4fe89c24{STARTING}[10.0.13,sto=30000] @8261ms
+03:29:01.168  INFO 904253669-25 .hazelcast.i.p.i.PartitionStateManager [172.20.20.110]:5701 ["Its_Me"] [4.0.2] Initializing cluster partition table arrangement...
+03:30:57.647  INFO RequireNewTx           o.moqui.i.e.EntityFacadeImpl Created 791 automatic reverse relationships
+03:30:57.696  INFO RequireNewTx             o.moqui.i.e.EntityDataFeed Built entity.data.feed.info cache in 234ms, entries for 47 entities
+03:30:57.712  INFO iScheduled-2         o.moqui.i.s.ScheduledJobRunner Running job autoApprove_OrdersDelayed run 100408 (last run 2023-04-10 03:15:11.208, schedule 2023-04-10T03:30-07:00[US/Pacific])
+
+
+
+-Dhazelcast.diagnostics.enabled=true
+
+
+
+
+
+-----------------------------------------------------------
+Not sure there is any load balancer, I would think there isn’t any of that. But what we have been doing is to determine which member(s) to use for running jobs. In our case, we needed some specific Job Runs to be run only on a moqui instance with enough memory (the job requires a ridiculous amount of memory to generate some huge XLSX files), so we could have one normal instance of moqui, really only needed when restarting or deploying a new version with no downtime, and the big memory instance.
+This can be done by adding an ExecutorService ToolFactory with a hazelcast MemberSelector class that discriminates which member(s) can be used for executing a call.
+In our case, when the big memory instance is not available for any reason, the Job Run simply fails, which is the desired outcome.
+
+
+
+
+
+
+
+
+
+
+
+
