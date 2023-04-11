@@ -1,0 +1,34 @@
+https://github.com/moqui/moqui-framework/issues/320
+https://github.com/moqui/moqui-framework/issues/400
+https://reflectoring.io/spring-boot-hazelcast/
+https://github.com/thombergs?tab=repositories
+When we want to scale our application, every new instance will create a new member and this member will join the cluster automatically.
+
+Hazelcast provides several mechanisms for discovering the members. If we don’t configure any discovery mechanism, the default one is used, in which Hazelcast tries to find other members in the same network using multicast.
+
+Also, we have to note that Hazelcast is a java library. That means, the member can be embedded in a java application only.
+
+Hazelcast-Member can only be exists in java-applications.
+-------------------------------------------------------------------------------------------------------
+Type 1 :
+
+We should use the Embedded cache topology when we have to execute high-performance computing with the data from the cache.
+
+-----------------------------------------------------------------------------------------------------------------------------
+Type 2 :
+
+We should use the client-server topology when the deployment of the application is bigger than the cluster cache.
+
+Since our application now only contains the clients to the cache and not the cache itself, we need to spin up a cache instance in our tests. We can do this very easily by using the Hazelcast Docker image and Testcontainers (see an example on GitHub). 
+
+------------------------------------------------------------------------------------------------------------------------------
+
+Type 3 : 
+
+Using the near-cache we can reduce network traffic. But it’s important to understand that we have to accept a possible data inconsistency. Since the near-cache has its own configuration, it will evict the data according this configuration. If data is updated or evicted in the cache cluster, we can still have stale data in the near-cache. This data will be evicted later according to the eviction configuration and then we’ll get a cache miss. Only after the data has been evicted from the near-cache will it be read from the cache cluster again.
+
+We should use the near-cache when we read from the cache very often, and when the data in the cache cluster changes only rarely.
+-----------------------------------------------------------------------------------------------------------------------------------
+The Hazelcast Java library supports setting up the cache cluster with two topologies. The embedded cache topology supports very fast reading for high-performance computing. The client-server topology supports independent scaling of the application and the cache cluster. It’s very easy to integrate the cluster or write a client for the cluster in a Spring (Boot) application.
+
+If you want to play around with a working example, have a look at the code on Github.
